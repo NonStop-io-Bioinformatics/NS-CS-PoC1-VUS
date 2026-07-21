@@ -1,0 +1,141 @@
+## NS_CS_PoC1 — full stack
+##   order-db / case-db / variant-db  : lab source databases (LIMS, Tertiary, KB)
+##   report-db                        : signed-out patient reports
+##   report-service (backend)         : aggregates source DBs -> report-db + read API
+##   frontend                         : React report viewer (nginx, proxies /api)
+##
+## DB host ports 5433-5436 avoid OpenELIS's 5432; backend 8088, frontend 3000.
+
+name: ns-cs-poc1
+
+services:
+  order-db:
+    image: postgres:latest
+    container_name: ns_order_db
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_svc
+      POSTGRES_PASSWORD: order_pass
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+      - ./databases/order-db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_svc -d order_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  case-db:
+    image: postgres:latest
+    container_name: ns_case_db
+    environment:
+      POSTGRES_DB: case_db
+      POSTGRES_USER: case_svc
+      POSTGRES_PASSWORD: case_pass
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    volumes:
+      - case_db_data:/var/lib/postgresql/data
+      - ./databases/case-db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U case_svc -d case_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  variant-db:
+    image: postgres:latest
+    container_name: ns_variant_db
+    environment:
+      POSTGRES_DB: variant_db
+      POSTGRES_USER: variant_svc
+      POSTGRES_PASSWORD: variant_pass
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    volumes:
+      - variant_db_data:/var/lib/postgresql/data
+      - ./databases/variant-db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U variant_svc -d variant_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  report-db:
+    image: postgres:latest
+    container_name: ns_report_db
+    environment:
+      POSTGRES_DB: report_db
+      POSTGRES_USER: report_svc
+      POSTGRES_PASSWORD: report_pass
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+    volumes:
+      - report_db_data:/var/lib/postgresql/data
+      - ./databases/report-db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U report_svc -d report_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  report-service:
+    build: ./backend
+    container_name: ns_report_service
+    environment:
+      ORDER_DB_DSN: postgresql://order_svc:order_pass@order-db:5432/order_db
+      CASE_DB_DSN: postgresql://case_svc:case_pass@case-db:5432/case_db
+      VARIANT_DB_DSN: postgresql://variant_svc:variant_pass@variant-db:5432/variant_db
+      REPORT_DB_DSN: postgresql://report_svc:report_pass@report-db:5432/report_db
+      AUTO_GENERATE: "true"
+      CORS_ORIGINS: "*"
+    ports:
+      - "8088:8080"
+    depends_on:
+      order-db:
+        condition: service_healthy
+      case-db:
+        condition: service_healthy
+      variant-db:
+        condition: service_healthy
+      report-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/health')\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 25s
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: ns_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      report-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  order_db_data:
+  case_db_data:
+  variant_db_data:
+  report_db_data:
