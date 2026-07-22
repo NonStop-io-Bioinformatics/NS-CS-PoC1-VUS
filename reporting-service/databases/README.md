@@ -27,12 +27,12 @@ by name (`order-db`, `case-db`, `variant-db`, `report-db` on `5432`;
 
 ## Run
 
-The compose file now lives at the **repo root** (it orchestrates the DBs, the
-backend, and the frontend), and the report-service moved to [`../backend/`](../backend/).
-Run everything from the project root:
+The compose file lives one level up, in the **`reporting-service/`** project (it
+orchestrates the DBs, the backend at [`../backend/`](../backend/), and the frontend).
+Run everything from there:
 
 ```bash
-cd ..                                  # project root
+cd ..                                  # -> reporting-service/
 
 docker compose up -d --build --wait    # build + start everything, wait until healthy
 docker compose ps                      # status

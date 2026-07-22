@@ -39,8 +39,9 @@ not by editing it here.
 
 ## Setup & run
 
-The DBs must be up (`docker compose up -d order-db case-db variant-db report-db`
-from the repo root). Create the venv the connectors run in — **use the system
+The DBs must be up — start them from the sibling reporting-service project
+(`cd ../reporting-service && docker compose up -d order-db case-db variant-db report-db`).
+Create the venv the connectors run in — **use the system
 Python** so the venv's base interpreter is on a system path the Claude Science
 sandbox can see (a conda/home-based Python is invisible inside the sandbox):
 
