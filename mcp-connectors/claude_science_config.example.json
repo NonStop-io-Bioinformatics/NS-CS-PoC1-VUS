@@ -1,0 +1,35 @@
+{
+  "_comment": "Add these under 'mcpServers' in your Claude Science / Claude Desktop config. Replace <VENV_PYTHON> with the python from the venv where mcp+psycopg are installed (e.g. /home/tabish/NonStop/NS_CS_PoC1/mcp-connectors/.venv/bin/python) and <REPO> with the absolute repo path. DSNs assume the DBs are running via docker compose (host ports 5433-5436).",
+  "mcpServers": {
+    "ns-order-db": {
+      "command": "<VENV_PYTHON>",
+      "args": ["<REPO>/mcp-connectors/order-db/server.py"],
+      "env": {
+        "ORDER_DB_DSN": "postgresql://order_svc:order_pass@localhost:5433/order_db",
+        "DEIDENTIFY": "true"
+      }
+    },
+    "ns-case-db": {
+      "command": "<VENV_PYTHON>",
+      "args": ["<REPO>/mcp-connectors/case-db/server.py"],
+      "env": {
+        "CASE_DB_DSN": "postgresql://case_svc:case_pass@localhost:5434/case_db"
+      }
+    },
+    "ns-variant-db": {
+      "command": "<VENV_PYTHON>",
+      "args": ["<REPO>/mcp-connectors/variant-db/server.py"],
+      "env": {
+        "VARIANT_DB_DSN": "postgresql://variant_svc:variant_pass@localhost:5435/variant_db"
+      }
+    },
+    "ns-report-db": {
+      "command": "<VENV_PYTHON>",
+      "args": ["<REPO>/mcp-connectors/report-db/server.py"],
+      "env": {
+        "REPORT_DB_DSN": "postgresql://report_svc:report_pass@localhost:5436/report_db",
+        "DEIDENTIFY": "true"
+      }
+    }
+  }
+}
